@@ -1,5 +1,7 @@
 import streamlit as st
-from pdf2image import convert_from_bytes
+import fitz  # PyMuPDF
+from PIL import Image
+import io
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -149,7 +151,16 @@ if uploaded_file is not None:
     if st.button("🚀 Processar Currículo com IA"):
         with st.spinner("🔄 Convertendo PDF, enviando imagens e analisando currículo... Isso pode levar alguns minutos."):
             # 1. Converter PDF em imagens
-            imagens = convert_from_bytes(uploaded_file.read())
+            pdf_bytes = uploaded_file.read()
+            pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
+            imagens = []
+            for page_num in range(len(pdf_document)):
+                page = pdf_document.load_page(page_num)
+                pix = page.get_pixmap()
+                img_bytes = pix.tobytes("png")
+                img = Image.open(io.BytesIO(img_bytes))
+                imagens.append(img)
+                
             links_publicos = []
             file_ids = []
             
